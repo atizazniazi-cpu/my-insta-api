@@ -24,4 +24,7 @@ app.get('/api/instagram', async (req, res) => {
   }
 });
 
-app.listen(10000, () => console.log('Running'));
+app.get('/', (req, res) => {
+  res.send('API is Live! Use /api/instagram?url=INSTA_LINK');
+});
+module.exports = app;
