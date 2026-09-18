@@ -1,30 +1,44 @@
 const express = require('express');
-const axios = require('axios');
-const cheerio = require('cheerio');
 const cors = require('cors');
+const axios = require('axios');
+
 const app = express();
 app.use(cors());
 
+app.get('/', (req, res) => {
+  res.send('API is Live! Use /api/instagram?url=LINK');
+});
+
 app.get('/api/instagram', async (req, res) => {
+  const instaUrl = req.query.url;
+  if (!instaUrl) return res.status(400).json({ error: 'url missing' });
+
   try {
-    const instaUrl = req.query.url;
-    const { data } = await axios.post('https://snapsave.app/action.php', 
-      `url=${encodeURIComponent(instaUrl)}`,
-      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    // Cobalt API - sab se powerful downloader
+    const response = await axios.post('https://api.cobalt.tools/api/json',
+      { url: instaUrl },
+      { headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' } }
     );
-    const $ = cheerio.load(data);
-    let links = [];
-    $('a[href*="https://"]').each((i, el) => {
-      let link = $(el).attr('href');
-      if(link.includes('.mp4')) links.push(link);
+
+    const data = response.data;
+
+    // Cobalt kabhi direct url deta hai, kabhi picker
+    let videoUrl = data.url || data.picker?.[0]?.url;
+
+    if (!videoUrl) {
+      return res.status(500).json({ error: 'Video not found from Cobalt', raw: data });
+    }
+
+    res.json({
+      downloadUrl: videoUrl,
+      videoUrl: videoUrl,
+      status: 'success',
+      raw: data
     });
-    res.json({ status: 'success', downloads: links });
-  } catch (e) {
-    res.json({ status: 'fail', error: e.message });
+
+  } catch (err) {
+    res.status(500).json({ error: 'Failed', details: err.response?.data || err.message });
   }
 });
 
-app.get('/', (req, res) => {
-  res.send('API is Live! Use /api/instagram?url=INSTA_LINK');
-});
 module.exports = app;
