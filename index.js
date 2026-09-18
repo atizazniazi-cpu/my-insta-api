@@ -1,43 +1,41 @@
-const express = require('express');
-const cors = require('cors');
-const axios = require('axios');
+const express = require("express");
+const cors = require("cors");
+const { instagram } = require("@jerrycoder/instagram-api");
 
 const app = express();
+
 app.use(cors());
 
-app.get('/', (req, res) => {
-  res.send('API is Live! Use /api/instagram?url=LINK');
+app.get("/", (req, res) => {
+  res.json({
+    status: "success",
+    message: "Instagram API is Live!"
+  });
 });
 
-app.get('/api/instagram', async (req, res) => {
-  const instaUrl = req.query.url;
-  if (!instaUrl) return res.status(400).json({ error: 'url missing' });
-
+app.get("/api/instagram", async (req, res) => {
   try {
-    // Cobalt API - sab se powerful downloader
-    const response = await axios.post('https://api.cobalt.tools/api/json',
-      { url: instaUrl },
-      { headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' } }
-    );
+    const url = req.query.url;
 
-    const data = response.data;
-
-    // Cobalt kabhi direct url deta hai, kabhi picker
-    let videoUrl = data.url || data.picker?.[0]?.url;
-
-    if (!videoUrl) {
-      return res.status(500).json({ error: 'Video not found from Cobalt', raw: data });
+    if (!url) {
+      return res.status(400).json({
+        status: "error",
+        message: "Instagram URL is required"
+      });
     }
 
-    res.json({
-      downloadUrl: videoUrl,
-      videoUrl: videoUrl,
-      status: 'success',
-      raw: data
+    const data = await instagram(url);
+
+    return res.status(200).json({
+      status: "success",
+      data: data
     });
 
-  } catch (err) {
-    res.status(500).json({ error: 'Failed', details: err.response?.data || err.message });
+  } catch (error) {
+    return res.status(500).json({
+      status: "error",
+      message: error.message
+    });
   }
 });
 
