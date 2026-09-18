@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instagram Video Downloader</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      color: #222;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 60px auto;
+      padding: 20px;
+    }
+
+    .box {
+      background: white;
+      padding: 25px;
+      border-radius: 18px;
+      box-shadow: 0 5px 25px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 0;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #777;
+      margin-bottom: 25px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+
+    button,
+    .download-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+      margin-top: 10px;
+    }
+
+    .get-btn {
+      background: #111;
+      color: white;
+    }
+
+    .download-btn {
+      background: #16803c;
+      color: white;
+    }
+
+    .clear-btn {
+      background: #eee;
+      color: #333;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .error {
+      display: none;
+      background: #ffe5e5;
+      color: #c00;
+      padding: 12px;
+      border-radius: 10px;
+      margin-top: 15px;
+    }
+
+    .result {
+      display: none;
+      margin-top: 25px;
+    }
+
+    video {
+      width: 100%;
+      border-radius: 12px;
+      background: #000;
+      margin-bottom: 10px;
+    }
+
+    .options {
+      margin-top: 15px;
+    }
+
+    .option-title {
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      font-size: 15px;
+    }
+
+    .note {
+      font-size: 12px;
+      color: #777;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <div class="box">
+
+      <h1>Instagram Downloader</h1>
+
+      <p class="subtitle">
+        Download Instagram Reels & Videos
+      </p>
+
+      <input
+        type="text"
+        id="urlInput"
+        placeholder="Paste Instagram Reel URL here"
+      >
+
+      <button class="get-btn" onclick="getVideo()">
+        Get Video
+      </button>
+
+      <div class="loading" id="loading">
+        ⏳ Getting video...
+      </div>
+
+      <div class="error" id="error"></div>
+
+      <div class="result" id="result">
+
+        <video id="videoPlayer" controls></video>
+
+        <div class="options">
+
+          <div class="option-title">
+            Video Quality
+          </div>
+
+          <select id="quality">
+            <option value="original">
+              Original Quality
+            </option>
+          </select>
+
+          <div class="option-title">
+            Audio
+          </div>
+
+          <select id="audio">
+            <option value="video-audio">
+              Video + Audio
+            </option>
+          </select>
+
+        </div>
+
+        <a
+          id="downloadBtn"
+          class="download-btn"
+          href="#"
+          target="_blank"
+        >
+          ⬇️ Download Video
+        </a>
+
+        <button
+          class="clear-btn"
+          onclick="clearVideo()"
+        >
+          Clear
+        </button>
+
+        <p class="note">
+          Current API provides the available original media URL.
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+
+    const API_URL =
+      "https://my-insta-api-seven.vercel.app/api/instagram?url=";
+
+    async function getVideo() {
+
+      const input =
+        document.getElementById("urlInput");
+
+      const url =
+        input.value.trim();
+
+      const loading =
+        document.getElementById("loading");
+
+      const error =
+        document.getElementById("error");
+
+      const result =
+        document.getElementById("result");
+
+      const videoPlayer =
+        document.getElementById("videoPlayer");
+
+      const downloadBtn =
+        document.getElementById("downloadBtn");
+
+      error.style.display = "none";
+      result.style.display = "none";
+
+      if (!url) {
+
+        error.textContent =
+          "Please paste an Instagram URL.";
+
+        error.style.display = "block";
+
+        return;
+      }
+
+      loading.style.display = "block";
+
+      try {
+
+        const response =
+          await fetch(
+            API_URL + encodeURIComponent(url)
+          );
+
+        const data =
+          await response.json();
+
+        if (
+          !response.ok ||
+          data.status !== "success" ||
+          !data.data ||
+          !data.data.url
+        ) {
+
+          throw new Error(
+            data.message ||
+            "Video not found."
+          );
+
+        }
+
+        const videoUrl =
+          data.data.url;
+
+        videoPlayer.src =
+          videoUrl;
+
+        downloadBtn.href =
+          videoUrl;
+
+        downloadBtn.download =
+          "instagram-video.mp4";
+
+        result.style.display =
+          "block";
+
+      } catch (err) {
+
+        error.textContent =
+          err.message ||
+          "Something went wrong.";
+
+        error.style.display =
+          "block";
+
+      } finally {
+
+        loading.style.display =
+          "none";
+
+      }
+    }
+
+    function clearVideo() {
+
+      document.getElementById("urlInput").value =
+        "";
+
+      document.getElementById("videoPlayer").src =
+        "";
+
+      document.getElementById("result").style.display =
+        "none";
+
+      document.getElementById("error").style.display =
+        "none";
+    }
+
+  </script>
+
+</body>
+</html>
